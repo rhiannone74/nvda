@@ -718,6 +718,18 @@ class UIATextInfo(textInfos.TextInfo):
 
 	updateCaret = updateSelection
 
+	def scrollIntoView(self, alignToTop=True):
+		# Calling ScrollIntoView always scrolls, also when the current text is already in view.
+		# This is not what we want.
+		tempInfo=self.copy()
+		# Usually align to the bottom is scrolling downwards, so collapse at the end in that case.
+		tempInfo.collapse(end=not alignToTop)
+		tempInfo.expand(textInfos.UNIT_CHARACTER)
+		if tempInfo.boundingRects:
+			# The last character of our range is already in view.
+			return
+		self._rangeObj.ScrollIntoView(alignToTop)
+
 class UIA(Window):
 
 	def _get__coreCycleUIAPropertyCacheElementCache(self):
@@ -975,6 +987,10 @@ class UIA(Window):
 	def _get_UIASelectionItemPattern(self):
 		self.UIASelectionItemPattern=self._getUIAPattern(UIAHandler.UIA_SelectionItemPatternId,UIAHandler.IUIAutomationSelectionItemPattern)
 		return self.UIASelectionItemPattern
+
+	def _get_UIAScrollItemPattern(self):
+		self.UIAScrollItemPattern=self._getUIAPattern(UIAHandler.UIA_ScrollItemPatternId,UIAHandler.IUIAutomationScrollItemPattern)
+		return self.UIAScrollItemPattern
 
 	def _get_UIATextPattern(self):
 		self.UIATextPattern=self._getUIAPattern(UIAHandler.UIA_TextPatternId,UIAHandler.IUIAutomationTextPattern,cache=True)
@@ -1423,8 +1439,12 @@ class UIA(Window):
 			info["level"]=level
 		return info
 
-	def scrollIntoView(self):
-		pass
+	def scrollIntoView(self, alignToTop=True):
+		if self.UIAScrollItemPattern:
+			try:
+				self.UIAScrollItemPattern.ScrollIntoView(alignToTop)
+			except COMError:
+				log.debugWarning("UIA ScrollItem pattern ScrollIntoView failed", exc_info=True)
 
 	def _get_controllerFor(self):
 		e=self._getUIACacheablePropertyValue(UIAHandler.UIA_ControllerForPropertyId)

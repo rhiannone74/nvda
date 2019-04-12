@@ -323,11 +323,11 @@ class TextInfo(baseObject.AutoPropertyObject):
 
 	def unitIndex(self,unit):
 		"""
-@param unit: a unit constant for which you want to retreave an index
-@type: string
-@returns: The 1-based index of this unit, out of all the units of this type in the object
-@rtype: int
-"""  
+		@param unit: a unit constant for which you want to retreave an index
+		@type: string
+		@returns: The 1-based index of this unit, out of all the units of this type in the object
+		@rtype: int
+		"""  
 		raise NotImplementedError
 
 	def unitCount(self,unit):
@@ -544,6 +544,16 @@ class TextInfo(baseObject.AutoPropertyObject):
 		"""Get MathML for a math control field.
 		This will only be called for control fields with a role of L{controlTypes.ROLE_MATH}.
 		@raise LookupError: If MathML can't be retrieved for this field.
+		"""
+		raise NotImplementedError
+
+	def scrollIntoView(self, alignToTop=True):
+		"""
+		Scrolls the text range into view on the screen, if possible.
+		@param alignToTop: C{True} if the text should be scrolled so the text range is
+			flush with the top of the viewport;
+			C{False} if it should be flush with the bottom of the viewport.
+		@type alignToTop: bool
 		"""
 		raise NotImplementedError
 

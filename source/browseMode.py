@@ -1,6 +1,6 @@
 #browseMode.py
 #A part of NonVisual Desktop Access (NVDA)
-#Copyright (C) 2007-2018 NV Access Limited, Babbage B.V.
+#Copyright (C) 2007-2019 NV Access Limited, Babbage B.V.
 #This file is covered by the GNU General Public License.
 #See the file COPYING for more details.
 
@@ -1134,6 +1134,7 @@ class BrowseModeDocumentTreeInterceptor(documentBase.DocumentWithTableNavigation
 		# We need to cache this because it will be unavailable once the document dies.
 		if not hasattr(self.rootNVDAObject.appModule, "_browseModeRememberedCaretPositions"):
 			self.rootNVDAObject.appModule._browseModeRememberedCaretPositions = {}
+		self._prevCaretPosition = None
 		self._lastCaretPosition = None
 		#: True if the last caret move was due to a focus change.
 		self._lastCaretMoveWasFocus = False
@@ -1227,6 +1228,7 @@ class BrowseModeDocumentTreeInterceptor(documentBase.DocumentWithTableNavigation
 		# causing the last caret position to be lost.
 		caret = info.copy()
 		caret.collapse()
+		self._prevCaretPosition = self._lastCaretPosition
 		self._lastCaretPosition = caret.bookmark
 		review.handleCaretMove(caret)
 		if reason == controlTypes.REASON_FOCUS:
@@ -1245,7 +1247,21 @@ class BrowseModeDocumentTreeInterceptor(documentBase.DocumentWithTableNavigation
 				return
 			if focusObj and not eventHandler.isPendingEvents("gainFocus") and focusObj!=self.rootNVDAObject and focusObj != api.getFocusObject() and self._shouldSetFocusToObj(focusObj):
 				focusObj.setFocus()
-			obj.scrollIntoView()
+			if isinstance(self._prevCaretPosition, textInfos.offsets.Offsets):
+				# We're dealing with caret offsets here, so start and end are the same.
+				alignToTop = self._lastCaretPosition.startOffset < self._prevCaretPosition.startOffset
+			else:
+				try:
+					alignToTop = self._lastCaretPosition.compareEndPoints(self._prevCaretPosition, "startToStart") == -1
+				except AttributeError:
+					alignToTop = True
+			try:
+				info.scrollIntoView(alignToTop)
+			except NotImplementedError:
+				try:
+					obj.scrollIntoView()
+				except NotImplementedError:
+					pass
 			if self.programmaticScrollMayFireEvent:
 				self._lastProgrammaticScrollTime = time.time()
 		self.passThrough=self.shouldPassThrough(focusObj,reason=reason)
